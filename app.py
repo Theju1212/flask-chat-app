@@ -1,5 +1,6 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, send
+from os import getenv
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -27,5 +28,6 @@ def handle_message(data):
         send(full_message, broadcast=True)  # Broadcast to all clients
 
 if __name__ == "__main__":
-    print("🚀 Starting Flask SocketIO Chat Server...")
-    socketio.run(app, host="0.0.0.0", port=10000, debug=True)
+    print("\U0001F680 Starting Flask SocketIO Chat Server...")
+    port = int(getenv("PORT", 10000))  # Default to 10000 if PORT is not set
+    socketio.run(app, host="0.0.0.0", port=port, debug=True)
