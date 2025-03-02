@@ -44,17 +44,14 @@ def send_private_message(message, sender_name, client_socket):
         client_socket.send(f"❌ User '{target_name}' not found.\n".encode())
 
 # Function to handle each client
-def handle_client(client_socket, address):
+def handle_client(client_socket):
     global clients
     try:
-        client_socket.send("Enter your username: ".encode())
-        name = client_socket.recv(1024).decode().strip()
-        if not name:
-            client_socket.close()
-            return
+        name = client_socket.recv(1024).decode('utf-8').strip()
 
-        if name in clients:
-            client_socket.send("❌ Username already taken. Choose a different one.\n".encode())
+        # Ignore health checks or malformed names
+        if name.startswith("HEAD") or name.startswith("GET"):
+            print(f"⚠️ Ignoring non-chat request: {name}")
             client_socket.close()
             return
 
@@ -72,7 +69,7 @@ def handle_client(client_socket, address):
 
         # Listen for messages
         while True:
-            message = client_socket.recv(1024).decode().strip()
+            message = client_socket.recv(1024).decode('utf-8')
             if not message:
                 break
 
@@ -82,18 +79,20 @@ def handle_client(client_socket, address):
             if message.startswith("@who"):
                 online_users = "👥 Online Users: " + ", ".join(clients.keys())
                 client_socket.send(online_users.encode())
-            elif message.startswith("@"):
+            elif message.startswith("@"):  # Private message
                 send_private_message(message, name, client_socket)
             else:
                 broadcast(f"{name}: {message}", name)
+    except Exception as e:
+        print(f"❌ Error handling client {name}: {e}")
 
-    except:
-        pass
-
-    print(Fore.RED + f"❌ {name} has left the chat.")
-    broadcast(f"📢 {name} has left the chat!")
-    del clients[name]
-    client_socket.close()
+    finally:
+        # Ensure safe deletion
+        if name in clients:
+            del clients[name]
+        print(Fore.RED + f"❌ {name} has left the chat.")
+        broadcast(f"📢 {name} has left the chat!")
+        client_socket.close()
 
 # Function to start the server
 def start_server():
@@ -108,7 +107,7 @@ def start_server():
         client_socket, address = server.accept()
         print(Fore.BLUE + f"🔌 Connection from {address} established!")
 
-        thread = threading.Thread(target=handle_client, args=(client_socket, address))
+        thread = threading.Thread(target=handle_client, args=(client_socket,))
         thread.start()
 
 if __name__ == "__main__":
