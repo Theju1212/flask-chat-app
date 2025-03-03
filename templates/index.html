@@ -8,25 +8,43 @@
 </head>
 <body>
     <h1>Real-Time Chat</h1>
+
     <div id="chat-box"></div>
+
+    <!-- Username Input -->
+    <input type="text" id="username" placeholder="Enter your name" />
+
+    <!-- Message Input -->
     <input type="text" id="message" placeholder="Type a message..." />
+
+    <!-- Send Button -->
     <button onclick="sendMessage()">Send</button>
 
     <script>
         var socket = io();
 
-        socket.on("message", function(msg) {
+        socket.on("message", function(data) {
             var chatBox = document.getElementById("chat-box");
             var message = document.createElement("p");
-            message.textContent = msg;
+
+            // Handle both string and object messages
+            if (typeof data === "string") {
+                message.textContent = data; // Fallback for old format
+            } else {
+                message.textContent = `${data.username}: ${data.message}`;
+            }
+
             chatBox.appendChild(message);
         });
 
         function sendMessage() {
-            var input = document.getElementById("message");
-            var msg = input.value;
-            socket.send(msg);
-            input.value = "";
+            var username = document.getElementById("username").value.trim() || "Anonymous";
+            var message = document.getElementById("message").value.trim();
+
+            if (message) {
+                socket.emit("message", { username: username, message: message });
+                document.getElementById("message").value = ""; // Clear input after sending
+            }
         }
     </script>
 </body>

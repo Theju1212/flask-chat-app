@@ -17,15 +17,18 @@ def handle_message(data):
     if isinstance(data, str):  # Support both string and dictionary format
         message = data.strip()
         username = "Anonymous"
-    else:
-        username = data.get("username", "Anonymous")
+    elif isinstance(data, dict):  # Ensure it's a dictionary
+        username = data.get("username", "Anonymous").strip()
         message = data.get("message", "").strip()
+    else:
+        print("Invalid message format received!")
+        return
 
     if message:  # Prevent empty messages
         full_message = f"{username}: {message}"
         print(f"Received: {full_message}")
         chat_history.append(full_message)
-        send(full_message, broadcast=True)  # Broadcast to all clients
+        send({"username": username, "message": message}, broadcast=True)  # Send as a dictionary
 
 if __name__ == "__main__":
     print("\U0001F680 Starting Flask SocketIO Chat Server...")
